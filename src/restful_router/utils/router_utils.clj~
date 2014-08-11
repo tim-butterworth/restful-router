@@ -1,0 +1,88 @@
+(ns restful-router.utils.router-utils
+  (:require [restful-router.utils.utils :refer :all]))
+
+(defn star-param [param accume val] 
+  (assoc accume param param))
+
+(defn star [param accume val]
+  accume)
+
+(defn star-process [lst termination]
+  (loop [vals lst sub-accume []]
+    (if 
+        (and 
+         (not (empty? vals)) 
+         (not= (first vals) termination))
+      (recur (rest vals) (conj sub-accume (first vals)))
+      {:result sub-accume :remainder vals})))
+
+(defn named-star [name lst accume]
+  (star-process lst name))
+
+(defn test-builder [test builder]
+  {:test test :builder builder})
+
+(defn fixed-processor [key]
+  (fn [lst accume success failure]
+    (if (= (first lst) key)
+      (success (rest lst) accume)
+      (failure))))
+
+;There should not be any way param-processor can fail, empty check on list is done before calling processor
+(defn param-processor [raw-key]
+  (let [key (to-key-word raw-key)]
+    (fn [lst accume success failure]
+      (success 
+       (rest lst) 
+       (assoc accume key (first lst))))))
+
+(defn make-processor-response [remainder processor]
+  {:remainder remainder :processor processor})
+
+(defn call-processor-builder [builder lst]
+  (let [val (first lst)]
+    (make-processor-response (rest lst) ((builder) val))))
+
+(defn fixed-processor-builder [lst]
+  (call-processor-builder (fn [] fixed-processor) lst))
+
+(defn param-processor-builder [lst]
+  (call-processor-builder (fn [] param-processor) lst))
+
+(def processor-mp 
+  {:star-fn
+   (test-builder 
+    (fn [n] 
+      (begins-with n "*"))
+    (fn [lst] "does nothing so far")) 
+   :param-fn
+   (test-builder 
+    (fn [n]
+      (begins-with n ":"))
+    param-processor-builder) 
+   :fixed-fn
+   (test-builder
+    (fn [n]
+      true)
+    fixed-processor-builder)})
+
+(defn next-processor  [lst]
+  (let [kys (keys processor-mp)
+        token (first lst)]
+    (loop [vals kys]
+      (let [key (first vals)
+            test ((processor-mp key) :test)
+            builder ((processor-mp key) :builder)]
+        (if (test token)
+          (builder lst)
+          (recur (rest vals)))))))
+
+(defn convert-pattern-to-processor-list [pattern]
+  (loop [vals pattern accume []]
+    (if (not (empty? vals))
+      (let [result (next-processor vals)]
+        (recur 
+         (:remainder result)
+         (conj accume (:processor result))))
+      accume)))
+;four kinds, *<param>, *, :<param>, <exact match>

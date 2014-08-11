@@ -1,0 +1,38 @@
+(ns restful-router.utils.utils-spec
+  (:require [speclj.core :refer :all]
+            [restful-router.utils.utils :as utils]))
+
+(describe "verify utility functions"
+          (it "filter empty strings returns empty for list of empty strings"
+              (should 
+               (= 
+                (utils/filter-empty-strings ["" "" "" ""])
+                [])))
+
+          (it "filter empty strings returns empty for empty list"
+              (should 
+               (= 
+                (utils/filter-empty-strings [])
+                [])))
+
+          (it "filter empty strings returns non-empty strings"
+              (should 
+               (= 
+                (utils/filter-empty-strings ["" "" "hi" "" "there" ""])
+                ["hi" "there"])))
+
+          (it "should split up a uri into strings, removing the leading empty string"
+              (should
+               (=
+                (utils/uri-to-list "/kewl/cool/neato")
+                ["kewl" "cool" "neato"])))
+
+          (it "should split up a 'empty'uri into strings, removing all empty strings"
+              (should
+               (=
+                (utils/uri-to-list "///hi")
+                ["hi"])))
+
+)
+
+(run-specs)

@@ -1,0 +1,54 @@
+(ns restful-router.utils.router-utils-spec
+  (:require [speclj.core :refer :all]
+            [restful-router.utils.router-utils :as subject]))
+
+(describe "verify utility functions"
+                                        ;tests for fixed-processor
+          (it "should return the a remainder and processor"
+              (should
+               (=
+                (keys (subject/fixed-processor-builder ["hi" "how" "are" "you"])) [:remainder :processor])))
+          (it "should return the remainder should be the tail of the list"
+              (should
+               (=
+                (:remainder (subject/fixed-processor-builder ["hi" "how" "are" "you"])) ["how" "are" "you"])))
+          (it "the processor should return the remainder of the list and not change parameters if correct first element"
+              (should
+               (=
+                ((:processor (subject/fixed-processor-builder ["hi" "how" "are" "you"])) 
+                 ["hi" "everyone"] 
+                   {:initial-key :initial-val} 
+                   (fn [remainder accume] {:remainder remainder :accume accume}) 
+                   (fn [] "failure")) {:remainder ["everyone"] :accume {:initial-key :initial-val}})))
+          (it "the processor should return the remainder of the list and not change parameters if correct first element"
+              (should
+               (=
+                ((:processor (subject/fixed-processor-builder ["hi" "how" "are" "you"])) 
+                 ["hiii" "everyone"] 
+                   {:initial-key :initial-val} 
+                   (fn [remainder accume] {:remainder remainder :accume accume}) 
+                   (fn [] "failure")) "failure")))
+                                        ;test for param-processor
+          (it "should return the remainder should be the tail of the list for param"
+              (should
+               (=
+                (:remainder (subject/param-processor-builder ["hi" "how" "are" "you"])) ["how" "are" "you"])))
+          (it "the processor should return the remainder of the list and a new labeled parameters"
+              (should
+               (=
+                ((:processor (subject/param-processor-builder ["hi" "how" "are" "you"])) 
+                 ["everyone" "is" "kewl"] 
+                   {:initial-key :initial-val} 
+                   (fn [remainder accume] {:remainder remainder :accume accume}) 
+                   (fn [] "failure")) {:remainder ["everyone"] :accume {:initial-key :initial-val :hi "everyone"}})))
+          (it "the processor should return the remainder of the list and not change parameters if correct first element"
+              (should
+               (=
+                ((:processor (subject/param-processor-builder ["hi" "how" "are" "you"])) 
+                 ["hiii" "everyone"] 
+                   {:initial-key :initial-val} 
+                   (fn [remainder accume] {:remainder remainder :accume accume}) 
+                   (fn [] "failure")) "failure")))
+          )
+
+(run-specs)
