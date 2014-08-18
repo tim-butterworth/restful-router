@@ -141,11 +141,17 @@
                                      ["1" "2" "3" "solid" "val1" "val2" "m" "i" "d" "d" "l" "e" "end" "too" "many" "values"])
                        "failure")))
 
-          (it "too many values in the incoming uri shouold cause the failure to be called"
+          (it "all parameters should collect all the values"
               (should (= 
                        (test-pattern [":solid" ":param1" ":param2" ":middle"]
                                      ["1" "2" "3" "solid"])
                        {:solid "1" :param1 "2" :param2 "3" :middle "solid"})))
+
+          (it "star should skip 0 or more"
+              (should (= 
+                       (test-pattern ["*" "solid" ":param1" ":param2" ":param3"]
+                                     ["solid" "1" "2" "3"])
+                       {:param1 "1" :param2 "2" :param3 "3"})))
           )
 
 (run-specs)
