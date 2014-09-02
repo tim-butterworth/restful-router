@@ -22,7 +22,7 @@
       (success (rest lst) accume failure)
       (failure))))
 
-;There should not be any way param-processor can fail, empty check on list is done before calling processor
+                                        ;There should not be any way param-processor can fail, empty check on list is done before calling processor
 (defn param-processor [raw-key]
   (let [key (to-key-word raw-key)]
     (fn [lst accume success failure]
@@ -35,10 +35,10 @@
   (let [key (first (rest lst))]
     (fn [lst accume success failure]
       (let [divided (divide-list lst key)]
-          (success
-       (divided :back)
-       (accumulator accume (divided :front))
-       failure)))))
+        (success
+         (divided :back)
+         (accumulator accume (divided :front))
+         failure)))))
 
 (defn star-processor [lst]
   (general-star-processor 
@@ -48,9 +48,9 @@
 (defn named-star-processor [lst]
   (let [key (to-key-word
              (. (first lst) substring 1))]
-      (general-star-processor
-       lst
-       (fn [accume retained] (assoc accume key retained)))))
+    (general-star-processor
+     lst
+     (fn [accume retained] (assoc accume key retained)))))
 
 (defn make-processor-response [remainder processor]
   {:remainder remainder :processor processor})
@@ -106,6 +106,12 @@
           (builder lst)
           (recur (rest vals)))))))
 
+(defn processor-calling-fn [processor success]
+  (fn [lst accume failure]
+    (if (not (empty? lst))
+      (processor lst accume success failure)
+      (failure))))
+
 (defn convert-pattern-to-processor-list [pattern]
   (loop [vals pattern accume []]
     (if (not (empty? vals))
@@ -114,27 +120,26 @@
          (:remainder result)
          (conj accume (:processor result))))
       accume)))
-;four kinds, *<param>, *, :<param>, <exact match>
-(defn cap-fn [lst accume failure]
-  (if (empty? lst)
-    accume
-    (failure)))
-
-(defn processor-calling-fn [processor success]
+                                        ;four kinds, *<param>, *, :<param>, <exact match>
+(defn cap-fn-builder [success]
   (fn [lst accume failure]
-    (if (not (empty? lst))
-      (processor lst accume success failure)
+    (if (empty? lst)
+      (success accume)
       (failure))))
 
-(defn convert-processor-list-to-fn [lst]
+(defn convert-processor-list-to-fn [lst success]
   (let [r (reverse lst)]
-    (loop [vals r accume cap-fn]
+    (loop [vals r accume (cap-fn-builder success)]
       (if (not 
            (empty? vals))
         (recur (rest vals) (processor-calling-fn (first vals) accume))
         accume))))
 
+                                        ;{:key [:get "*/resources/*path"]
+                                        ; :fn (fn [params] params)}
 
-; (convert-processor-list-to-fn 
-;  (convert-pattern-to-processor-list ["*" "hi" ":kewl" "*named" "kewl"]) 
-;  ["1" "2" "hi" "val1" "some" "vals" "to" "save" "kewl"])
+(defn uri-pattern-to-fn [pattern-str success]
+  (let [pattern-lst (uri-to-list pattern-str)]
+    (-> pattern-lst 
+        convert-pattern-to-processor-list 
+        ((fn [n] (convert-processor-list-to-fn n success))))))

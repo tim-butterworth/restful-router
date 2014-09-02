@@ -110,10 +110,12 @@
 (defn test-pattern [pattern val]
   ((subject/convert-processor-list-to-fn 
     (subject/convert-pattern-to-processor-list 
-     pattern)) 
+     pattern)
+    (fn [n] n)) 
    val
    {} 
    (fn [] "failure")))
+
 (describe "Verify split uris get parsed correctly"
           ;successful match tests
           (it "a matching url sould work and return correct parameters"
@@ -123,19 +125,19 @@
                        {:param1 "val1" :param2 "val2" :middle ["m" "i" "d" "d" "l" "e"]})))
 
           ;non-matching tests
-          (it "a non-terminating named * shouold cause the failure to be called"
+          (it "a non-terminating named * should cause the failure to be called"
               (should (= 
                        (test-pattern ["*" "solid" ":param1" ":param2" "*middle" "end"]
                                      ["1" "2" "3" "solid" "val1" "val2" "m" "i" "d" "d" "l" "e"])
                        "failure")))
 
-          (it "a missing fixed value shouold cause the failure to be called"
+          (it "a missing fixed value should cause the failure to be called"
               (should (= 
                        (test-pattern ["*" "solid" ":param1" ":param2" "*middle" "end"]
                                      ["1" "2" "3" "val1" "val2" "m" "i" "d" "d" "l" "e" "end"])
                        "failure")))
 
-          (it "too many values in the incoming uri shouold cause the failure to be called"
+          (it "too many values in the incoming uri should cause the failure to be called"
               (should (= 
                        (test-pattern ["*" "solid" ":param1" ":param2" "*middle" "end"]
                                      ["1" "2" "3" "solid" "val1" "val2" "m" "i" "d" "d" "l" "e" "end" "too" "many" "values"])
@@ -152,6 +154,28 @@
                        (test-pattern ["*" "solid" ":param1" ":param2" ":param3"]
                                      ["solid" "1" "2" "3"])
                        {:param1 "1" :param2 "2" :param3 "3"})))
+          )
+
+;(defn uri-pattern-to-fn [pattern-str success]
+(describe "Verify uri-patter-to-fn"
+          ;successful match tests
+          (it "a matching url sould work and return correct parameters"
+              (should (= 
+                       ((subject/uri-pattern-to-fn "*/solid/:param1/:param2/*middle/end" (fn [n] n))
+                                     ["1" "2" "3" "solid" "val1" "val2" "m" "i" "d" "d" "l" "e" "end"]
+                                       {}
+                                       (fn [] "failure"))
+                       {:param1 "val1" :param2 "val2" :middle ["m" "i" "d" "d" "l" "e"]})))
+
+          ;non-matching tests
+          (it "a non-terminating named * should cause the failure to be called"
+              (should (= 
+                       ((subject/uri-pattern-to-fn "*/solid/:param1/:param2/*middle/end" (fn [n] n))
+                                     ["1" "2" "3" "solid" "val1" "val2" "m" "i" "d" "d" "l" "e"]
+                                       {}
+                                       (fn [] "failure"))
+                       "failure")))
+
           )
 
 (run-specs)
