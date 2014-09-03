@@ -1,9 +1,0 @@
-(ns restful-router.utils.utils)
-
-(defn filter-empty-strings [lst]
-      (filter 
-      (fn [n] (not (= n ""))) 
-      lst))
-(defn uri-to-list [uri]
-      (filter-empty-strings
-      (clojure.string/split uri #"/")))

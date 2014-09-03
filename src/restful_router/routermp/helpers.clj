@@ -14,7 +14,7 @@
               args))))))
 
 (defn uri-fn-mp [uri fn method]
-  {:uri (str (name method) "/" uri)
+  {:uri (join-method method uri)
    :fn fn})
 
 (defn GET [uri fn]

@@ -135,9 +135,6 @@
         (recur (rest vals) (processor-calling-fn (first vals) accume))
         accume))))
 
-                                        ;{:key [:get "*/resources/*path"]
-                                        ; :fn (fn [params] params)}
-
 (defn uri-pattern-to-fn [pattern-str success]
   (let [pattern-lst (uri-to-list pattern-str)]
     (-> pattern-lst 

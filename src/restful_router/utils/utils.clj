@@ -1,5 +1,8 @@
 (ns restful-router.utils.utils)
 
+(defn join-method [method uri]
+  (str (name method) "/" uri))
+
 (defn filter-empty-strings [lst]
       (filter 
       (fn [n] (not (= n ""))) 
