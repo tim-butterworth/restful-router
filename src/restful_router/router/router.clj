@@ -2,6 +2,14 @@
   (:require [restful-router.utils.utils :refer :all]
             [restful-router.utils.router-utils :refer :all]))
 
+(defn optional-assoc [mp options request]
+  (reduce 
+   (fn [accume option] 
+     (let [value (request option)]
+       (if (not (= nil value))
+         (assoc accume option value)
+         accume))) mp options))
+
 (defn route-to-route-fn [lst]
   (map 
    (fn [n] 
@@ -22,7 +30,7 @@
       (call-next 
        fn-lst 
        (uri-to-list (join-method (:request-method request) (:uri request)))
-       (:params request)
+       (optional-assoc {} [:params :json] request)
        0
        default))))
 

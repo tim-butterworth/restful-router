@@ -8,7 +8,7 @@
                                           :params {:formp1 "formval1" :formp2 "formval2"}}
 (def mp 
   {:routes [(GET 
-             "*/secretsanta/:admin/:group/*resourcepath"
+             "*/secretsanta/admin/:admin/:group/*resourcepath"
              (with-params [admin group resourcepath] 
                (clojure.string/join " :: "
                                     [(str "group : " group)
@@ -32,19 +32,40 @@
                                      useremail])))
             (POST
              "*/secretsanta/post/:admin/:group/makenewuser/:userid/:useremail"
-             (with-params [admin group userid useremail formp1 formp2]
+             (with-params [admin group userid useremail params]
                (clojure.string/join " "
                                     [admin
                                      group
                                      userid
                                      useremail
                                      "POSTED FROM A FORM::"
-                                     formp1
-                                     formp2])))]
+                                     (params :formp1)
+                                     (params :formp2)])))
+            (GET
+             "*/secretsanta/resources/*path"
+             (with-params [path json]
+               (if (not (= nil json))
+                 (conj path (json :hi))
+                 path)))]
+
    :fn (fn [] "failure")
    :default (fn [] "default")})
 
-                                        ;(let [lst (uri-to-list "post/1/2/3/secretsanta/someadmin/somegroup/makenewuser/1/email") params {:params {:key "val"}}] ((first (route-to-route-fn (:routes mp))) lst params (fn [] (failure lst params (fn [] "failure")))))
+(def test-mp
+  {:key1 :value1
+   :key2 :value2
+   :key3 :value3})
+
+(describe "Test optional association of request values"
+          (it ""
+              (should (=
+                       {:key1 :value1 :key2 :value2}
+                       (router/optional-assoc {} [:key1 :key2] test-mp))))
+          (it ""
+              (should (=
+                       {:key1 :value1 :key2 :value2}
+                       (router/optional-assoc {} [:key1 :key2 :key4] test-mp))))
+          )
 
 (def subject (router/build-router mp))
 
@@ -54,7 +75,7 @@
                        "group : butterworth :: admin : tim :: loading resource : [\"kewl\" \"background\" \"jpeg.jpeg\"]......"
                        (router/call-next
                         (router/route-to-route-fn (mp :routes))
-                        ["get" "localhost" "somehost" "secretsanta" "tim" "butterworth" "kewl" "background" "jpeg.jpeg"]
+                        ["get" "localhost" "somehost" "secretsanta" "admin" "tim" "butterworth" "kewl" "background" "jpeg.jpeg"]
                         {}
                         0
                         (mp :default)
@@ -88,7 +109,7 @@
           (it "correctly route a request matching the first route"
               (should (=
                        "group : butterworth :: admin : tim :: loading resource : [\"kewl\" \"background\" \"jpeg.jpeg\"]......"
-                       ((subject :route) {:uri "/localhost/somehost/secretsanta/tim/butterworth/kewl/background/jpeg.jpeg"
+                       ((subject :route) {:uri "/localhost/somehost/secretsanta/admin/tim/butterworth/kewl/background/jpeg.jpeg"
                                           :request-method :get
                                           :params {}}))))
 
@@ -120,6 +141,20 @@
                                           :request-method :put
                                           :params {}}))))
 
+          (it "correctly route route for wildcard"
+              (should (=
+                       ["butterworth" "makenewuser" "kewlid" "email@email.gov"]
+                       ((subject :route) {:uri "/secretsanta/resources/butterworth/makenewuser/kewlid/email@email.gov"
+                                          :request-method :get
+                                          :params {}}))))
+
+          (it "correctly route route for wildcard with json"
+              (should (= 
+                       ["butterworth" "makenewuser" "kewlid" "email@email.gov" "there"]
+                       ((subject :route) {:uri "/secretsanta/resources/butterworth/makenewuser/kewlid/email@email.gov"
+                                          :request-method :get
+                                          :params {}
+                                          :json {:hi "there"}}))))
           )
 
 (run-specs)
